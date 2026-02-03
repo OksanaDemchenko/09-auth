@@ -1,19 +1,19 @@
-export const dynamic = 'force-dynamic';
-
 import { NextResponse } from 'next/server';
-import { api }  from '@/lib/api/api';
+import { api } from '@/lib/api/api';
 import { cookies } from 'next/headers';
 import { isAxiosError } from 'axios';
 import { logErrorResponse } from '../../_utils/utils';
-import type { RequestCookie } from 'next/dist/compiled/@edge-runtime/cookies';
 
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const cookieStore = await cookies(); 
+   
+    const cookieStore = await cookies();
+    
     const cookieHeader = cookieStore
       .getAll()
-      .map((c: RequestCookie) => `${c.name}=${c.value}`)
+      .map((c) => `${c.name}=${c.value}`)
       .join('; ');
 
     const res = await api.get('/users/me', {
@@ -37,15 +37,15 @@ export async function GET() {
   }
 }
 
-
 export async function PATCH(req: Request) {
   try {
     const body = await req.json();
 
-    const cookieStore = await cookies(); 
+    const cookieStore = await cookies();
+    
     const cookieHeader = cookieStore
       .getAll()
-      .map((c: RequestCookie) => `${c.name}=${c.value}`)
+      .map((c) => `${c.name}=${c.value}`)
       .join('; ');
 
     const res = await api.patch('/users/me', body, {

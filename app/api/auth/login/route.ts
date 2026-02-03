@@ -1,41 +1,59 @@
+// app/api/auth/login/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { api } from '../../api';
-import { isAxiosError } from 'axios';
+import { api } from '../../api'; // твій axios інстанс
+import { parse } from 'cookie';
+import type { AxiosError } from 'axios';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
+    // Виконуємо запит на бекенд
     const apiRes = await api.post('/auth/login', body);
 
-    const response = NextResponse.json({ success: true });
+    // Беремо set-cookie з відповіді бекенду
+    const setCookieHeader = apiRes.headers['set-cookie'];
+    const response = NextResponse.json(apiRes.data, { status: 200 });
 
-    response.cookies.set({
-      name: 'accessToken',
-      value: apiRes.data.accessToken,
-      httpOnly: true,
-      path: '/',
-      sameSite: 'lax',
-      secure: false, 
-    });
+    if (setCookieHeader) {
+      const cookieArray = Array.isArray(setCookieHeader)
+        ? setCookieHeader
+        : [setCookieHeader];
 
-    response.cookies.set({
-      name: 'refreshToken',
-      value: apiRes.data.refreshToken,
-      httpOnly: true,
-      path: '/',
-      sameSite: 'lax',
-      secure: false,
-    });
+      for (const cookieStr of cookieArray) {
+        const parsed = parse(cookieStr);
+
+        if (parsed.accessToken) {
+          response.cookies.set('accessToken', parsed.accessToken, {
+            path: '/',
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+          });
+        }
+
+        if (parsed.refreshToken) {
+          response.cookies.set('refreshToken', parsed.refreshToken, {
+            path: '/',
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+          });
+        }
+      }
+    }
 
     return response;
-  } catch (error) {
-    if (isAxiosError(error)) {
-      return NextResponse.json(
-        { error: 'Login failed' },
-        { status: error.response?.status ?? 401 }
-      );
+  } catch (err) {
+    let errorMessage = 'Unknown error';
+    let statusCode = 500;
+
+    if ((err as AxiosError).isAxiosError) {
+      const axiosError = err as AxiosError<{ error: string }>;
+      errorMessage = axiosError.response?.data?.error ?? axiosError.message;
+      statusCode = axiosError.response?.status ?? 500;
     }
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+
+    return NextResponse.json({ error: errorMessage }, { status: statusCode });
   }
 }
