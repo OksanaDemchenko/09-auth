@@ -1,47 +1,31 @@
-'use client';
-
 import Image from 'next/image';
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import css from './ProfilePage.module.css';
-import { useAuthStore } from '@/lib/store/authStore';
-import { useRouter } from 'next/navigation';
-import { logout } from '@/lib/api/clientApi';
+import { getMe } from '@/lib/api/serverApi';
 
-export default function ProfilePage() {
-  const router = useRouter();
-  const user = useAuthStore((state) => state.user);
-  const clearUser = useAuthStore((state) => state.clearUser);
+export const metadata: Metadata = {
+  title: 'Profile - NoteHub',
+  description: 'View and manage your profile on NoteHub',
+};
 
-  if (!user) return null; 
+export default async function ProfilePage() {
+  const user = await getMe();
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      clearUser();
-      router.push('/sign-in');
-    } catch (err) {
-      console.error('Logout failed', err);
-    }
-  };
+  if (!user) {
+    return <p>User not found</p>;
+  }
 
   return (
     <main className={css.mainContent}>
       <div className={css.profileCard}>
         <div className={css.header}>
-            <h1 className={css.formTitle}>Profile Page</h1>
-            <div className={css.actions}>
-                <Link href="/profile/edit" className={css.editProfileButton}>
-                Edit Profile
-                 </Link>
-                 
-                 <button
-                 type="button"
-                 onClick={handleLogout}
-                 className={css.logoutButton}
-                 >
-                    Log out
-                    </button>
-             </div>
+          <h1 className={css.formTitle}>Profile Page</h1>
+          <div className={css.actions}>
+            <Link href="/profile/edit" className={css.editProfileButton}>
+              Edit Profile
+            </Link>
+          </div>
         </div>
 
         <div className={css.avatarWrapper}>

@@ -1,14 +1,8 @@
-// lib/api/serverApi.ts
-import axios from 'axios';
 import type { Note } from '../../types/note';
 import type { User } from '../../types/user';
+import { api } from './api'; 
+import { cookies } from 'next/headers';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
-
-const serverApi = axios.create({
-  baseURL: BASE_URL,
-  withCredentials: true, 
-});
 
 export const fetchNotes = async (params?: {
   page?: number;
@@ -16,25 +10,50 @@ export const fetchNotes = async (params?: {
   search?: string;
   tag?: string;
 }): Promise<Note[]> => {
-  const response = await serverApi.get<Note[]>('/notes', { params });
-  return response.data;
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore.toString();
+
+  const res = await api.get<Note[]>('/notes', {
+    params,
+    headers: {
+      Cookie: cookieHeader,
+    },
+  });
+  return res.data;
 };
 
 export const fetchNoteById = async (id: string): Promise<Note> => {
-  const response = await serverApi.get<Note>(`/notes/${id}`);
-  return response.data;
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore.toString();
+
+  const res = await api.get<Note>(`/notes/${id}`, {
+    headers: { Cookie: cookieHeader },
+  });
+  return res.data;
 };
+
 
 export const getMe = async (): Promise<User> => {
-  const response = await serverApi.get<User>('/users/me');
-  return response.data;
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore.toString();
+
+  const res = await api.get<User>('/users/me', {
+    headers: { Cookie: cookieHeader },
+  });
+  return res.data;
 };
 
-export const checkSession = async (): Promise<User | null> => {
+
+export const checkSession = async () => {
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore.toString();
+
   try {
-    const response = await serverApi.get<User>('/auth/session');
-    return response.data || null;
+    const res = await api.get('/auth/session', {
+      headers: { Cookie: cookieHeader },
+    });
+    return res; 
   } catch {
-    throw new Error('Failed to fetch');
+    return null;
   }
 };

@@ -1,5 +1,6 @@
 import type { Note } from '../../types/note';
 import type { User } from '../../types/user';
+import { api } from './api'; 
 
 export interface FetchNotesParams {
   page: number;
@@ -13,7 +14,6 @@ export interface FetchNotesResponse {
   totalPages: number;
 }
 
-
 export const fetchNotes = async (
   params: FetchNotesParams
 ): Promise<FetchNotesResponse> => {
@@ -23,19 +23,13 @@ export const fetchNotes = async (
   if (params.search) query.append('search', params.search);
   if (params.tag) query.append('tag', params.tag);
 
-  const res = await fetch(`/api/notes?${query.toString()}`, {
-    credentials: 'include',
-    cache: 'no-store',
-  });
-
-  if (!res.ok) throw new Error('Failed to fetch notes');
-  return res.json();
+  const res = await api.get(`/notes?${query.toString()}`);
+  return res.data;
 };
 
 export const fetchNoteById = async (id: string): Promise<Note> => {
-  const res = await fetch(`/api/notes/${id}`, { credentials: 'include' });
-  if (!res.ok) throw new Error('Failed to fetch note');
-  return res.json();
+  const res = await api.get(`/notes/${id}`);
+  return res.data;
 };
 
 export const createNote = async (payload: {
@@ -43,78 +37,45 @@ export const createNote = async (payload: {
   content: string;
   tag: Note['tag'];
 }): Promise<Note> => {
-  const res = await fetch('/api/notes', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) throw new Error('Failed to create note');
-  return res.json();
+  const res = await api.post('/notes', payload);
+  return res.data;
 };
 
 export const deleteNote = async (id: string): Promise<Note> => {
-  const res = await fetch(`/api/notes/${id}`, {
-    method: 'DELETE',
-    credentials: 'include',
-  });
-  if (!res.ok) throw new Error('Failed to delete note');
-  return res.json();
+  const res = await api.delete(`/notes/${id}`);
+  return res.data;
 };
 
 
 export const register = async (email: string, password: string): Promise<User> => {
-  const res = await fetch('/api/auth/register', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ email, password }),
-  });
-  if (!res.ok) throw new Error('Register failed');
-  return res.json();
+  const res = await api.post('/auth/register', { email, password });
+  return res.data;
 };
 
 export const login = async (email: string, password: string): Promise<User> => {
-  const res = await fetch('/api/auth/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include', 
-    body: JSON.stringify({ email, password }),
-  });
-  if (!res.ok) throw new Error('Login failed');
-  return res.json();
+  const res = await api.post('/auth/login', { email, password });
+  return res.data;
 };
 
 export const logout = async (): Promise<void> => {
-  await fetch('/api/auth/logout', {
-    method: 'POST',
-    credentials: 'include',
-  });
+  await api.post('/auth/logout');
 };
 
 export const checkSession = async (): Promise<User | null> => {
   try {
-    const res = await fetch('/api/auth/session', { credentials: 'include' });
-    if (!res.ok) return null;
-    return res.json();
+    const res = await api.get('/auth/session');
+    return res.data;
   } catch {
     return null;
   }
 };
 
 export const getMe = async (): Promise<User> => {
-  const res = await fetch('/api/users/me', { credentials: 'include' });
-  if (!res.ok) throw new Error('Unauthorized');
-  return res.json();
+  const res = await api.get('/users/me');
+  return res.data;
 };
 
 export const updateMe = async (data: { username: string }): Promise<User> => {
-  const res = await fetch('/api/users/me', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error('Update failed');
-  return res.json();
+  const res = await api.patch('/users/me', data);
+  return res.data;
 };
